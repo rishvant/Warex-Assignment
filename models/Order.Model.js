@@ -23,9 +23,9 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    userId: {
+    user_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Assuming you have a User model for authentication
+        ref: 'User',
         required: true
     }
 }, { timestamps: true });

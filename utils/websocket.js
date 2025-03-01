@@ -2,6 +2,20 @@ import { WebSocketServer } from 'ws';
 
 const wss = new WebSocketServer({ port: 8080 });
 
+wss.on('connection', (ws) => {
+    console.log("Admin connected to WebSocket");
+
+    ws.send(JSON.stringify({ message: "Connected to WebSocket server" }));
+
+    ws.on('close', () => {
+        console.log("Admin disconnected from WebSocket");
+    });
+
+    ws.on('error', (error) => {
+        console.error("WebSocket error:", error);
+    });
+});
+
 export const notifyAdmins = (order) => {
     const message = {
         message: "New order placed",
@@ -18,3 +32,5 @@ export const notifyAdmins = (order) => {
         }
     });
 };
+
+console.log("WebSocket server running on ws://localhost:8080");

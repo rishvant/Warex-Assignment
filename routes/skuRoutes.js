@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post('/', authenticate, SkuController.createSKU);
+router.get('/get_sku/:user_id', authenticate, SkuController.getSKUByUserId);
+router.post('/create_sku', authenticate, SkuController.createSKU);
 
-export default router; 
+export default router;
