@@ -20,6 +20,15 @@ const OrderController = {
                 return res.status(400).json({ error: "Invalid SKU ID format" });
             }
 
+            const lastOrder = await Order.findOne()
+                .sort({ createdAt: -1 });
+            
+            let nextOrderId = "OD-00001";
+            if (lastOrder.order_id) {
+                const lastNumber = parseInt(lastOrder.order_id?.split("-")[1]);
+                nextOrderId = `OD-${String(lastNumber + 1).padStart(5, "0")}`;
+            }
+
             const customer = await Customer.findById(customer_id);
             const sku = await SKU.findById(sku_id);
             if (!customer) {
@@ -31,6 +40,7 @@ const OrderController = {
 
             const total_amount = quantity * rate;
             const newOrder = new Order({
+                order_id: nextOrderId,
                 customer_id,
                 sku_id,
                 quantity,
