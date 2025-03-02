@@ -3,6 +3,7 @@ import SKU from '../models/Sku.Model.js';
 import Customer from '../models/Customer.Model.js';
 import { notifyAdmins } from '../utils/websocket.js';
 import mongoose from 'mongoose';
+import HourlySummary from '../models/HourlySummary.Model.js';
 
 const OrderController = {
     createOrder: async (req, res) => {
@@ -22,7 +23,7 @@ const OrderController = {
 
             const lastOrder = await Order.findOne()
                 .sort({ createdAt: -1 });
-            
+
             let nextOrderId = "OD-00001";
             if (lastOrder.order_id) {
                 const lastNumber = parseInt(lastOrder.order_id?.split("-")[1]);
@@ -82,6 +83,17 @@ const OrderController = {
             res.status(200).json({ orders });
         } catch (error) {
             res.status(500).json({ error: "Error retrieving orders", details: error.message });
+        }
+    },
+    getHourlySummary: async (req, res) => {
+        try {
+            const summaries = await HourlySummary
+                .find()
+                .sort({ timestamp: -1 });
+
+            return res.status(200).json({ summaries });
+        } catch (error) {
+            return res.status(500).json({ message: "Server error" });
         }
     }
 }

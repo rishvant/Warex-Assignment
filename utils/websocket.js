@@ -1,36 +1,69 @@
-import { WebSocketServer } from 'ws';
+import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+import User from "../models/User.Model.js";
+import dotenv from "dotenv";
 
-const wss = new WebSocketServer({ port: 8080 });
+dotenv.config();
 
-wss.on('connection', (ws) => {
-    console.log("Admin connected to WebSocket");
+const io = new Server(8080, {
+    cors: {
+        origin: "*",
+    },
+});
 
-    ws.send(JSON.stringify({ message: "Connected to WebSocket server" }));
+const adminSockets = new Map();
 
-    ws.on('close', () => {
-        console.log("Admin disconnected from WebSocket");
-    });
+io.on("connection", async (socket) => {
+    const token = socket.handshake.headers.authorization?.split(" ")[1];
 
-    ws.on('error', (error) => {
-        console.error("WebSocket error:", error);
-    });
+    if (!token) {
+        console.log("Unauthorized connection attempt (No token)");
+        socket.disconnect();
+        return;
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.userId);
+
+        if (!user || user.role !== "admin") {
+            console.log(`User ${user?.username || "Unknown"} is not an admin`);
+            socket.disconnect();
+            return;
+        }
+
+        console.log(`Admin ${user.username} connected`);
+        adminSockets.set(socket.id, socket);
+
+        socket.emit("message", { message: "Connected as Admin" });
+
+        socket.on("disconnect", () => {
+            console.log(`Admin ${user.username} disconnected`);
+            adminSockets.delete(socket.id);
+        });
+
+    } catch (error) {
+        console.log("Invalid or expired token");
+        socket.disconnect();
+    }
 });
 
 export const notifyAdmins = (order) => {
     const message = {
         message: "New order placed",
-        order_id: order._id,
+        order_id: `${order.order_id}`,
+        user: order.user_id,
         customer: order.customer_id,
         sku: order.sku_id,
         total_amount: order.total_amount,
         timestamp: new Date().toISOString(),
     };
 
-    wss.clients.forEach(client => {
-        if (client.readyState === 1) {
-            client.send(JSON.stringify(message));
-        }
+    adminSockets.forEach((socket) => {
+        socket.emit("orderNotification", message);
     });
+
+    console.log("Sent notification to all admins:", message);
 };
 
-console.log("WebSocket server running on ws://localhost:8080");
+console.log("Socket.IO server running on port 8080");
