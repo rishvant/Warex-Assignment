@@ -25,7 +25,7 @@ const OrderController = {
                 .sort({ createdAt: -1 });
 
             let nextOrderId = "OD-00001";
-            if (lastOrder.order_id) {
+            if (lastOrder?.order_id) {
                 const lastNumber = parseInt(lastOrder.order_id?.split("-")[1]);
                 nextOrderId = `OD-${String(lastNumber + 1).padStart(5, "0")}`;
             }
